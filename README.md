@@ -1,6 +1,6 @@
-# Obsidian Folder Sync Plugin
+# Local Folder Sync
 
-A plugin for Obsidian that syncs vault folders to external directories, one-way or two-way per folder pair.
+A plugin that syncs vault folders to external directories, one-way or two-way per folder pair.
 
 ## Features
 
