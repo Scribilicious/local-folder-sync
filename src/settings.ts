@@ -15,7 +15,7 @@ export class FolderSyncSettingTab extends PluginSettingTab {
         containerEl.empty();
         containerEl.addClass('folder-sync-settings');
 
-        containerEl.createEl('h2', { text: 'Folder Sync Settings' });
+        new Setting(containerEl).setName('Folder Sync Settings').setHeading();
 
         // Auto sync toggle
         new Setting(containerEl)
@@ -76,41 +76,34 @@ export class FolderSyncSettingTab extends PluginSettingTab {
         containerEl.createEl('hr');
 
         // Manual sync button
-        containerEl.createEl('h3', { text: 'Manual Sync' });
-        const syncBtn = containerEl.createEl('button', {
-            text: 'Sync Now',
-            cls: 'mod-cta',
-        });
-        syncBtn.addEventListener('click', async () => {
-            syncBtn.disabled = true;
-            syncBtn.textContent = 'Syncing...';
-
-            try {
-                await this.plugin.syncAll(true);
-            } catch (error) {
-                // Error is already handled in syncAll
-            }
-
-            syncBtn.disabled = false;
-            syncBtn.textContent = 'Sync Now';
-        });
+        new Setting(containerEl).setName('Manual Sync').setHeading();
+        new Setting(containerEl)
+            .addButton(cb => cb
+                .setButtonText('Sync Now')
+                .setCta()
+                .onClick(async () => {
+                    cb.setButtonText('Syncing...');
+                    cb.setDisabled(true);
+                    try {
+                        await this.plugin.syncAll(true);
+                    } catch {
+                        // Error is already handled in syncAll
+                    }
+                    cb.setButtonText('Sync Now');
+                    cb.setDisabled(false);
+                })
+            );
 
         containerEl.createEl('hr');
 
         // Sync Pairs section
-        containerEl.createEl('h3', { text: 'Sync Folders' });
-        containerEl.createEl('p', {
-            text: 'Add folder pairs to sync. One-way: only source changes reach the destination, and extra ' +
-                'destination files are deleted. Newer file wins: whichever side changed most recently is ' +
-                'copied to the other side; nothing is ever deleted automatically.'
-        });
-
-        const addButton = containerEl.createEl('button', {
-            text: 'Add Sync Folder',
-        });
-        addButton.addEventListener('click', () => {
-            this.addSyncPair();
-        });
+        new Setting(containerEl).setName('Sync Folders').setHeading();
+        new Setting(containerEl)
+            .setName('Add folder pairs to sync. One-way: only source changes reach the destination, and extra destination files are deleted. Newer file wins: whichever side changed most recently is copied to the other side; nothing is ever deleted automatically.')
+            .addButton(cb => cb
+                .setButtonText('Add Sync Folder')
+                .onClick(() => this.addSyncPair())
+            );
 
         // List existing sync pairs
         const listEl = containerEl.createDiv({ cls: 'sync-folder-list' });
@@ -146,7 +139,7 @@ export class FolderSyncSettingTab extends PluginSettingTab {
 
     private createSyncPairSetting(container: HTMLElement, pair: SyncPair, index: number): void {
         const pairEl = container.createDiv({ cls: 'sync-folder-setting' });
-        pairEl.createEl('h4', { text: `Sync Folder #${index + 1}` });
+        new Setting(pairEl).setName(`Sync Folder #${index + 1}`).setHeading();
 
         // Source path
         new Setting(pairEl)
@@ -205,10 +198,11 @@ export class FolderSyncSettingTab extends PluginSettingTab {
             });
 
         // Remove button
-        const removeBtn = pairEl.createEl('button', {
-            text: 'Remove',
-            cls: 'sync-folder-remove-btn',
-        });
-        removeBtn.addEventListener('click', () => this.removeSyncPair(index));
+        new Setting(pairEl)
+            .addButton(cb => cb
+                .setButtonText('Remove')
+                .setCta()
+                .onClick(() => this.removeSyncPair(index))
+            );
     }
 }

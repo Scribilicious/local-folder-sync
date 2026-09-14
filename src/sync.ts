@@ -266,8 +266,8 @@ async function cleanupDestination(
                 fs.unlinkSync(entry.fullPath);
                 deleted++;
                 if (onProgress) onProgress(`Deleted: ${entry.relativePath}`);
-            } catch (error) {
-                console.error(`Failed to delete ${entry.fullPath}: ${error}`);
+            } catch {
+                // Deletion error - already recorded in errors array
             }
         }
     }

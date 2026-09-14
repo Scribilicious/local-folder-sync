@@ -8,17 +8,17 @@ const DEBOUNCE_MS = 1500;
 
 export default class FolderSyncPlugin extends Plugin {
     settings: FolderSyncSettings = DEFAULT_SETTINGS;
-    private autoSyncInterval: NodeJS.Timeout | null = null;
+    private autoSyncInterval: number | null = null;
     private isSyncing = false;
 
     private vaultEventRefs: EventRef[] = [];
     private fsWatchers: fs.FSWatcher[] = [];
-    private debounceTimer: NodeJS.Timeout | null = null;
+    private debounceTimer: number | null = null;
 
     private statusBarItem: HTMLElement | null = null;
-    private statusBarClearTimer: NodeJS.Timeout | null = null;
+    private statusBarClearTimer: number | null = null;
 
-    async onload() {
+    async onload(): Promise<void> {
         await this.loadSettings();
 
         this.statusBarItem = this.addStatusBarItem();
@@ -30,7 +30,7 @@ export default class FolderSyncPlugin extends Plugin {
         this.addCommand({
             id: 'folder-sync-manual',
             name: 'Sync all folders now',
-            callback: async () => {
+            callback: async (): Promise<void> => {
                 await this.syncAll(true);
             },
         });
@@ -39,13 +39,10 @@ export default class FolderSyncPlugin extends Plugin {
         if (this.settings.autoSync) {
             this.startAutoSync();
         }
-
-        console.log('Folder Sync plugin loaded');
     }
 
-    async onunload() {
+    async onunload(): Promise<void> {
         this.stopAutoSync();
-        console.log('Folder Sync plugin unloaded');
     }
 
     async loadSettings() {
@@ -68,20 +65,18 @@ export default class FolderSyncPlugin extends Plugin {
         if (this.settings.syncTrigger === 'on-change') {
             this.startWatchers();
         } else {
-            this.autoSyncInterval = setInterval(() => {
+            this.autoSyncInterval = window.setInterval(() => {
                 if (!this.isSyncing) {
-                    this.syncAll(false);
+                    void this.syncAll(false);
                 }
             }, this.settings.syncInterval * 60 * 1000);
-            console.log(`Auto sync started (every ${this.settings.syncInterval} minutes)`);
         }
     }
 
     stopAutoSync(): void {
         if (this.autoSyncInterval) {
-            clearInterval(this.autoSyncInterval);
+            window.clearInterval(this.autoSyncInterval);
             this.autoSyncInterval = null;
-            console.log('Auto sync stopped');
         }
         this.stopWatchers();
     }
@@ -127,12 +122,10 @@ export default class FolderSyncPlugin extends Plugin {
                     this.scheduleDebouncedSync();
                 });
                 this.fsWatchers.push(watcher);
-            } catch (error) {
-                console.error(`Folder Sync: failed to watch destination for changes: ${destPath}`, error);
+            } catch {
+                // Fail silently - watcher not critical
             }
         }
-
-        console.log('Folder Sync: on-change watchers started');
     }
 
     private stopWatchers(): void {
@@ -147,16 +140,16 @@ export default class FolderSyncPlugin extends Plugin {
         this.fsWatchers = [];
 
         if (this.debounceTimer) {
-            clearTimeout(this.debounceTimer);
+            window.clearTimeout(this.debounceTimer);
             this.debounceTimer = null;
         }
     }
 
     private scheduleDebouncedSync(): void {
         if (this.debounceTimer) {
-            clearTimeout(this.debounceTimer);
+            window.clearTimeout(this.debounceTimer);
         }
-        this.debounceTimer = setTimeout(() => {
+        this.debounceTimer = window.setTimeout(() => {
             this.debounceTimer = null;
             if (!this.isSyncing) {
                 this.syncAll(false);
@@ -167,12 +160,12 @@ export default class FolderSyncPlugin extends Plugin {
     private setStatus(text: string, autoClearMs?: number): void {
         if (!this.statusBarItem) return;
         if (this.statusBarClearTimer) {
-            clearTimeout(this.statusBarClearTimer);
+            window.clearTimeout(this.statusBarClearTimer);
             this.statusBarClearTimer = null;
         }
         this.statusBarItem.setText(text);
         if (autoClearMs) {
-            this.statusBarClearTimer = setTimeout(() => {
+            this.statusBarClearTimer = window.setTimeout(() => {
                 this.statusBarItem?.setText('');
                 this.statusBarClearTimer = null;
             }, autoClearMs);
@@ -208,13 +201,7 @@ export default class FolderSyncPlugin extends Plugin {
             }
 
             // Sync each pair
-            const results = await syncAllPairs(
-                this.app.vault,
-                enabledPairs,
-                (pairIndex, message) => {
-                    console.log(`Sync pair ${pairIndex + 1}: ${message}`);
-                }
-            );
+            const results = await syncAllPairs(this.app.vault, enabledPairs);
 
             // Aggregate results
             for (const [, result] of results) {
@@ -230,7 +217,6 @@ export default class FolderSyncPlugin extends Plugin {
             let summary = `Synced: ${totalCopied} copied, ${totalDeleted} deleted`;
             if (allErrors.length > 0) {
                 summary += `, ${allErrors.length} errors`;
-                console.error('Sync errors:', allErrors);
             }
 
             if (announce || changed) {
@@ -238,9 +224,8 @@ export default class FolderSyncPlugin extends Plugin {
             }
             this.setStatus(summary, 5000);
 
-        } catch (error) {
-            new Notice(`Sync failed: ${error}`);
-            console.error('Sync error:', error);
+        } catch {
+            new Notice('Folder Sync: Sync failed');
             this.setStatus('Folder Sync: failed', 5000);
         } finally {
             this.isSyncing = false;
