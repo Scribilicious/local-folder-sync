@@ -1,7 +1,7 @@
 {
 	"id": "local-folder-sync",
 	"name": "Local Folder Sync",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"minAppVersion": "1.5.0",
   	"description": "Sync folders to external directories. Supports multiple folder pairs.",
 	"author": "Jens Eldering",
