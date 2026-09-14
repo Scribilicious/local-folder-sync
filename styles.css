@@ -1,0 +1,77 @@
+/* Left-align settings: control sits under the name/description instead of
+   floating to the far right of the settings tab. */
+.folder-sync-settings .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.folder-sync-settings h2,
+.folder-sync-settings h3,
+.folder-sync-settings h4 {
+    padding: 0;
+}
+
+.folder-sync-settings .setting-item-control select.dropdown {
+    border: var(--input-border-width) solid var(--background-modifier-border);
+    color: var(--text-normal);
+    font-family: inherit;
+    padding: var(--input-padding);
+    font-size: var(--font-ui-small);
+    border-radius: var(--input-radius);
+    corner-shape: var(--input-corner-shape);
+    padding-right: var(--size-4-6);
+}
+
+.folder-sync-settings .setting-item-control select.dropdown:active,
+.folder-sync-settings .setting-item-control select.dropdown:focus {
+    box-shadow: 0 0 0 var(--input-border-width-focus) var(--background-modifier-border-focus);
+}
+
+.folder-sync-settings .setting-item-info {
+    margin-right: 0;
+}
+
+.folder-sync-settings .setting-item-control {
+    justify-content: flex-start;
+    margin-top: 0.5em;
+    width: 100%;
+}
+
+.sync-folder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    margin-top: 1em;
+}
+
+.sync-folder-setting {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 1em;
+    background-color: var(--background-secondary);
+}
+
+.sync-folder-setting h4 {
+    margin-top: 0;
+    margin-bottom: 0.5em;
+}
+
+.sync-folder-remove-btn {
+    margin-top: 0.5em;
+    align-self: flex-start;
+    padding: 0.25em 0.5em;
+    background-color: var(--background-modifier-error);
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.sync-folder-remove-btn:hover {
+    background-color: var(--background-modifier-error-hover);
+}
+
+/* Make sync button prominent */
+button[text="Add Sync Pair"] {
+    margin-bottom: 1em;
+}

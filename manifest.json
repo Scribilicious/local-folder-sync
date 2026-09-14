@@ -1,0 +1,11 @@
+{
+	"id": "local-folder-sync",
+	"name": "Local Folder Sync",
+	"version": "1.0.0",
+	"minAppVersion": "1.0.0",
+  	"description": "Sync Obsidian folders to external directories. Supports multiple folder pairs.",
+	"author": "Jens Eldering",
+	"authorUrl": "https://jenseldering.de",
+	"fundingUrl": "https://www.buymeacoffee.com/iambot",
+	"isDesktopOnly": false
+}
