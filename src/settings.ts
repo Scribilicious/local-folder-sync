@@ -15,7 +15,7 @@ export class FolderSyncSettingTab extends PluginSettingTab {
         containerEl.empty();
         containerEl.addClass('folder-sync-settings');
 
-        new Setting(containerEl).setName('Folder Sync Settings').setHeading();
+        new Setting(containerEl).setName('Folder Sync').setHeading();
 
         // Auto sync toggle
         new Setting(containerEl)
