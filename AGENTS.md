@@ -203,3 +203,122 @@ If requested, consider adding:
 - [ ] Progress indicators for large syncs
 - [ ] Exclude patterns (.gitignore style)
 - [ ] Binary file support
+
+---
+
+## Obsidian Community Hub Submission Guide
+
+### Prerequisites for Submission
+
+Before submitting to the Obsidian Community Hub, ensure the following:
+
+#### manifest.json Requirements
+- **id**: Unique plugin identifier (e.g., `local-folder-sync`)
+- **name**: Plugin display name (must match README title)
+- **version**: Follows Semantic Versioning (x.y.z format)
+- **minAppVersion**: Set to the minimum Obsidian version that supports all used APIs
+  - `1.5.0` or higher if using `ButtonComponent.setDisabled()` or `setButtonText()`
+- **description**: Must NOT contain the word "Obsidian" (it's implied by context)
+- **isDesktopOnly**: Must be `true` for plugins using Node.js modules (fs, path, etc.)
+
+#### README.md Requirements
+- **Title**: Must match the `name` field in manifest.json exactly
+  - Good: `# Local Folder Sync` (matches manifest name)
+  - Bad: `# Obsidian Folder Sync Plugin` (contains "Obsidian", doesn't match)
+
+#### Settings UI Requirements
+- **Headings**: Use `new Setting(containerEl).setName('Heading Text').setHeading()`
+  - Do NOT use `containerEl.createEl('h2', { text: '...' })` or similar
+  - Do NOT use the word "Settings" in heading text (e.g., use "Folder Sync" not "Folder Sync Settings")
+- **Buttons**: Use `new Setting(containerEl).addButton(cb => cb.setButtonText(...).onClick(...))`
+  - Avoid raw `createEl('button', ...)` calls
+
+#### Timer/Interval Compatibility
+- **Popout windows**: Use `window.setInterval()`, `window.clearInterval()`, `window.setTimeout()`, `window.clearTimeout()`
+  - Do NOT use the global `setInterval()`, `clearInterval()`, etc.
+- **Types**: Use `number` for timer IDs (not `NodeJS.Timeout`) since window methods return numbers
+
+#### Console Logging
+- **Avoid**: Remove or minimize `console.log()`, `console.error()`, `console.warn()` calls
+- **Reason**: Obsidian Hub flags unnecessary logging as warnings
+
+#### Type Safety
+- **Explicit return types**: Add `: Promise<void>` to async methods
+- **Error handling**: Use `catch` without parameters or `catch (error: unknown)` to avoid type issues
+- **Avoid**: Using `any` type or error types that override other types in unions
+
+### Creating a New Release
+
+#### Step 1: Prepare the Code
+```bash
+# Bump version in manifest.json
+# Edit src/manifest.json and change "version" field
+
+# Build the plugin
+npm run build
+
+# Verify main.js was created (should be in project root)
+ls -la main.js
+```
+
+#### Step 2: Commit and Tag
+```bash
+# Commit all changes
+git add manifest.json src/
+git commit -m "Bump version to X.Y.Z"
+
+# Create annotated tag (without 'v' prefix)
+git tag -a X.Y.Z -m "Version X.Y.Z"
+
+# Push to GitHub
+git push origin main
+git push origin X.Y.Z
+```
+
+**Important**: The tag name must match the version in manifest.json exactly (e.g., `1.0.3`, not `v1.0.3`).
+
+#### Step 3: Create GitHub Release
+1. Go to: `https://github.com/OWNER/REPO/releases`
+2. Click "Draft a new release"
+3. **Tag version**: Select the tag you created (e.g., `1.0.3`)
+4. **Release title**: Enter the version number (e.g., `1.0.3`)
+5. **Description**: Add release notes explaining what changed
+6. **Attach assets**: Drag and drop these files from your project root:
+   - `main.js` (required - the built plugin bundle)
+   - `manifest.json` (required - must match the release version)
+   - `styles.css` (optional - custom styles)
+7. Click "Publish release"
+
+**Critical**: The release tag MUST match the version in manifest.json. If manifest says `1.0.3`, the tag must be `1.0.3`.
+
+### Common Obsidian Hub Errors and Fixes
+
+| Error | Location | Fix |
+|-------|----------|-----|
+| Plugin description must not include "Obsidian" | manifest.json | Remove "Obsidian" from description |
+| isDesktopOnly should be true | manifest.json | Set to `true` if using Node.js modules |
+| README title doesn't match manifest name | README.md | Make title match manifest.name exactly |
+| Uses createEl for headings | settings.ts | Use `new Setting().setName().setHeading()` |
+| Avoid using "Settings" in settings headings | settings.ts | Remove "Settings" word from headings |
+| Uses APIs newer than minAppVersion | Any file | Update minAppVersion in manifest.json |
+| Uses setInterval without window. | main.ts | Use `window.setInterval()` |
+| Unnecessary console logging | Any file | Remove console.log/error calls |
+| Promise-returning method where void expected | main.ts | Add `: Promise<void>` return type |
+
+### Release Checklist
+
+- [ ] manifest.json version is correct (x.y.z format)
+- [ ] manifest.json description doesn't contain "Obsidian"
+- [ ] manifest.json isDesktopOnly is true (if using Node.js)
+- [ ] manifest.json minAppVersion supports all used APIs
+- [ ] README.md title matches manifest.json name
+- [ ] Settings use `new Setting().setName().setHeading()` for headings
+- [ ] Settings don't use "Settings" in heading text
+- [ ] All timers use window.* variants (setInterval, setTimeout, etc.)
+- [ ] Timer variables are typed as `number | null` (not NodeJS.Timeout)
+- [ ] Async methods have explicit `: Promise<void>` return types
+- [ ] Console logging is minimized/removed
+- [ ] Tag exists and matches manifest version (without 'v' prefix)
+- [ ] main.js is built and tested
+- [ ] GitHub release exists with correct tag
+- [ ] GitHub release has main.js and manifest.json attached as assets
