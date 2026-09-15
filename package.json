@@ -1,6 +1,6 @@
 {
 	"name": "local-folder-sync",
-	"version": "1.0.0",
+	"version": "1.0.4",
   	"description": "Sync Obsidian folders to external directories. Supports multiple folder pairs.",
 	"main": "main.js",
 	"type": "module",

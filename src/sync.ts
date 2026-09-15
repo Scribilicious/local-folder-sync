@@ -14,7 +14,10 @@ function toPosixPath(p: string): string {
 }
 
 function toArrayBuffer(buffer: Buffer): ArrayBuffer {
-    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
+    const start = buffer.byteOffset;
+    const end = buffer.byteOffset + buffer.byteLength;
+    const slice = buffer.buffer.slice(start, end);
+    return slice as ArrayBuffer;
 }
 
 /**
@@ -46,8 +49,8 @@ export async function syncPair(
         try {
             fs.mkdirSync(destPath, { recursive: true });
             if (onProgress) onProgress(`Created destination folder: ${destPath}`);
-        } catch (error) {
-            errors.push(`Failed to create destination folder: ${error}`);
+        } catch (error: unknown) {
+            errors.push(`Failed to create destination folder: ${error instanceof Error ? error.message : String(error)}`);
             return { copied: 0, deleted: 0, errors };
         }
     }
@@ -87,16 +90,17 @@ async function syncPairOneWay(
             // aren't corrupted (vault.read assumes UTF-8 text)
             const content = Buffer.from(await vault.readBinary(file));
 
+            const destContent = fs.existsSync(destFilePath) ? fs.readFileSync(destFilePath) : Buffer.from([]);
             const needsUpdate = !fs.existsSync(destFilePath) ||
-                !Buffer.from(fs.readFileSync(destFilePath)).equals(content);
+                !Buffer.from(destContent).equals(content);
 
             if (needsUpdate) {
                 fs.writeFileSync(destFilePath, content);
                 copied++;
                 if (onProgress) onProgress(`Copied: ${relativePath}`);
             }
-        } catch (error) {
-            errors.push(`Error syncing file ${file.path}: ${error}`);
+        } catch (error: unknown) {
+            errors.push(`Error syncing file ${file.path}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -127,11 +131,11 @@ async function syncPairNewer(
         sourceByRelPath.set(file.path.slice(sourceFolder.path.length + 1), file);
     }
 
-    const destByRelPath = new Map(
+    const destByRelPath = new Map<string, DestFileEntry>(
         listDestinationFiles(destPath).map(entry => [entry.relativePath, entry])
     );
 
-    const allRelativePaths = new Set([...sourceByRelPath.keys(), ...destByRelPath.keys()]);
+    const allRelativePaths = new Set<string>([...sourceByRelPath.keys(), ...destByRelPath.keys()]);
 
     for (const relativePath of allRelativePaths) {
         try {
@@ -151,8 +155,8 @@ async function syncPairNewer(
             } else if (!sourceFile && destEntry) {
                 const vaultPath = normalizePath(`${sourceFolder.path}/${relativePath}`);
                 await ensureVaultFolder(vault, path.dirname(vaultPath));
-                const content = fs.readFileSync(destEntry.fullPath);
-                await vault.createBinary(vaultPath, toArrayBuffer(content));
+                const contentBuffer = fs.readFileSync(destEntry.fullPath);
+                await vault.createBinary(vaultPath, toArrayBuffer(contentBuffer));
                 copied++;
                 if (onProgress) onProgress(`Copied to vault (new): ${relativePath}`);
             } else if (sourceFile && destEntry) {
@@ -173,8 +177,8 @@ async function syncPairNewer(
                     if (onProgress) onProgress(`Updated vault (destination newer): ${relativePath}`);
                 }
             }
-        } catch (error) {
-            errors.push(`Error syncing file ${relativePath}: ${error}`);
+        } catch (error: unknown) {
+            errors.push(`Error syncing file ${relativePath}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -258,7 +262,7 @@ async function cleanupDestination(
 ): Promise<number> {
     let deleted = 0;
     const sourceFiles = getAllFilesInFolder(sourceFolder);
-    const sourcePaths = new Set(sourceFiles.map(f => f.path.slice(sourceFolder.path.length + 1)));
+    const sourcePaths = new Set<string>(sourceFiles.map(f => f.path.slice(sourceFolder.path.length + 1)));
 
     for (const entry of listDestinationFiles(destPath)) {
         if (!sourcePaths.has(entry.relativePath)) {
@@ -302,7 +306,7 @@ export async function syncAllPairs(
         const destPath = normalizePath(pair.destination);
         const key = `${pair.source} -> ${pair.destination}`;
 
-        const overlapIndex = pairs.findIndex((p, j) =>
+        const overlapIndex = pairs.findIndex((p, j): boolean =>
             j !== i && p?.enabled && pathsOverlap(normalizePath(p.destination), destPath)
         );
 
@@ -312,14 +316,14 @@ export async function syncAllPairs(
                 deleted: 0,
                 errors: [
                     `Skipped: destination overlaps with sync pair #${overlapIndex + 1} ` +
-                    `("${pairs[overlapIndex].destination}"). Fix the paths — syncing both ` +
+                    `("${pairs[overlapIndex]?.destination}"). Fix the paths — syncing both ` +
                     `could delete each other's files.`,
                 ],
             });
             continue;
         }
 
-        const result = await syncPair(vault, pair, (msg) => {
+        const result = await syncPair(vault, pair, (msg: string) => {
             if (onProgress) onProgress(i, msg);
         });
 

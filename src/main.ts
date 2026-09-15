@@ -41,13 +41,13 @@ export default class FolderSyncPlugin extends Plugin {
         }
     }
 
-    async onunload(): Promise<void> {
+    onunload(): void {
         this.stopAutoSync();
     }
 
-    async loadSettings() {
-        const data = await this.loadData();
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+    async loadSettings(): Promise<void> {
+        const data = await this.loadData() as Partial<FolderSyncSettings> | null;
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, data ?? {});
         // Fill in defaults for sync pairs saved before `mode` existed
         this.settings.syncPairs = this.settings.syncPairs.map(pair => ({
             ...pair,
@@ -55,7 +55,7 @@ export default class FolderSyncPlugin extends Plugin {
         }));
     }
 
-    async saveSettings() {
+    async saveSettings(): Promise<void> {
         await this.saveData(this.settings);
     }
 
@@ -152,7 +152,7 @@ export default class FolderSyncPlugin extends Plugin {
         this.debounceTimer = window.setTimeout(() => {
             this.debounceTimer = null;
             if (!this.isSyncing) {
-                this.syncAll(false);
+                void this.syncAll(false);
             }
         }, DEBOUNCE_MS);
     }
@@ -185,7 +185,7 @@ export default class FolderSyncPlugin extends Plugin {
         }
 
         this.isSyncing = true;
-        this.setStatus('⏳ Folder Sync: syncing...');
+        this.setStatus('⏳ Folder sync: syncing...');
         let totalCopied = 0;
         let totalDeleted = 0;
         const allErrors: string[] = [];
@@ -220,13 +220,13 @@ export default class FolderSyncPlugin extends Plugin {
             }
 
             if (announce || changed) {
-                new Notice(`Folder Sync: ${summary}`);
+                new Notice(`Folder sync: ${summary}`);
             }
             this.setStatus(summary, 5000);
 
         } catch {
-            new Notice('Folder Sync: Sync failed');
-            this.setStatus('Folder Sync: failed', 5000);
+            new Notice('Folder sync: sync failed');
+            this.setStatus('Folder sync: failed', 5000);
         } finally {
             this.isSyncing = false;
         }
@@ -252,8 +252,8 @@ export default class FolderSyncPlugin extends Plugin {
                 }
                 new Notice(`Sync pair: ${message}`);
             }
-        } catch (error) {
-            new Notice(`Sync failed: ${error}`);
+        } catch (error: unknown) {
+            new Notice(`Sync failed: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             this.isSyncing = false;
         }
