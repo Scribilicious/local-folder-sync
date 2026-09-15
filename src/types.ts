@@ -16,13 +16,22 @@ export interface SyncPair {
 export interface FolderSyncSettings {
     syncPairs: SyncPair[];
     syncInterval: number; // in minutes, used when syncTrigger === 'interval'
+    syncIdleSeconds: number; // seconds of no changes before an 'on-change' sync fires
     autoSync: boolean;
     syncTrigger: SyncTrigger;
 }
 
+export const DEFAULT_SYNC_PAIR: SyncPair = {
+    source: '',
+    destination: '',
+    enabled: false,
+    mode: 'newer',
+};
+
 export const DEFAULT_SETTINGS: FolderSyncSettings = {
     syncPairs: [],
     syncInterval: 5,
+    syncIdleSeconds: 120,
     autoSync: false,
     syncTrigger: 'on-change',
 };

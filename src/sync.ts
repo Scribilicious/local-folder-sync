@@ -1,4 +1,4 @@
-import { TFile, TFolder, Vault, normalizePath } from 'obsidian';
+import { TAbstractFile, TFile, TFolder, Vault, normalizePath } from 'obsidian';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SyncPair } from './types';
@@ -90,9 +90,9 @@ async function syncPairOneWay(
             // aren't corrupted (vault.read assumes UTF-8 text)
             const content = Buffer.from(await vault.readBinary(file));
 
-            const destContent = fs.existsSync(destFilePath) ? fs.readFileSync(destFilePath) : Buffer.from([]);
-            const needsUpdate = !fs.existsSync(destFilePath) ||
-                !Buffer.from(destContent).equals(content);
+            const destContentBuffer = fs.existsSync(destFilePath) ? fs.readFileSync(destFilePath) : Buffer.from([]);
+            const destContent = Buffer.from(destContentBuffer);
+            const needsUpdate = !fs.existsSync(destFilePath) || !destContent.equals(content);
 
             if (needsUpdate) {
                 fs.writeFileSync(destFilePath, content);
@@ -208,7 +208,7 @@ async function ensureVaultFolder(vault: Vault, folderPath: string): Promise<void
 function getAllFilesInFolder(folder: TFolder): TFile[] {
     const files: TFile[] = [];
 
-    Vault.recurseChildren(folder, (file) => {
+    Vault.recurseChildren(folder, (file: TAbstractFile): void => {
         if (file instanceof TFile) {
             files.push(file);
         }
@@ -229,7 +229,7 @@ interface DestFileEntry {
 function listDestinationFiles(destPath: string): DestFileEntry[] {
     const results: DestFileEntry[] = [];
 
-    const walk = (dir: string) => {
+    const walk = (dir: string): void => {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
 
         for (const entry of entries) {
@@ -311,19 +311,20 @@ export async function syncAllPairs(
         );
 
         if (overlapIndex !== -1 && pairs[overlapIndex]) {
+            const overlapPair = pairs[overlapIndex];
             results.set(key, {
                 copied: 0,
                 deleted: 0,
                 errors: [
                     `Skipped: destination overlaps with sync pair #${overlapIndex + 1} ` +
-                    `("${pairs[overlapIndex]?.destination}"). Fix the paths — syncing both ` +
+                    `("${overlapPair?.destination}"). Fix the paths — syncing both ` +
                     `could delete each other's files.`,
                 ],
             });
             continue;
         }
 
-        const result = await syncPair(vault, pair, (msg: string) => {
+        const result = await syncPair(vault, pair, (msg: string): void => {
             if (onProgress) onProgress(i, msg);
         });
 

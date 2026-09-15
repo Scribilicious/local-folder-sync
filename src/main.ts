@@ -4,8 +4,6 @@ import { FolderSyncSettingTab } from './settings';
 import { syncAllPairs } from './sync';
 import { FolderSyncSettings, DEFAULT_SETTINGS, SyncPair } from './types';
 
-const DEBOUNCE_MS = 1500;
-
 export default class FolderSyncPlugin extends Plugin {
     settings: FolderSyncSettings = DEFAULT_SETTINGS;
     private autoSyncInterval: number | null = null;
@@ -117,7 +115,7 @@ export default class FolderSyncPlugin extends Plugin {
         for (const destPath of destinations) {
             if (!destPath || !fs.existsSync(destPath)) continue;
             try {
-                const watcher = fs.watch(destPath, { recursive: true }, () => {
+                const watcher = fs.watch(destPath, { recursive: true }, (): void => {
                     if (this.isSyncing) return;
                     this.scheduleDebouncedSync();
                 });
@@ -149,12 +147,13 @@ export default class FolderSyncPlugin extends Plugin {
         if (this.debounceTimer) {
             window.clearTimeout(this.debounceTimer);
         }
+        const idleMs = Math.max(1, this.settings.syncIdleSeconds) * 1000;
         this.debounceTimer = window.setTimeout(() => {
             this.debounceTimer = null;
             if (!this.isSyncing) {
                 void this.syncAll(false);
             }
-        }, DEBOUNCE_MS);
+        }, idleMs);
     }
 
     private setStatus(text: string, autoClearMs?: number): void {
