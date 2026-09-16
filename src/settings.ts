@@ -106,7 +106,7 @@ export class FolderSyncSettingTab extends PluginSettingTab {
             cls: 'folder-sync-settings',
             heading: 'Manual sync',
             items: [
-                this.row('Sync now', undefined, setting => {
+                this.row('Press the button to sync manually now.', undefined, setting => {
                     setting.addButton(cb => cb
                         .setButtonText('Sync now')
                         .setCta()
@@ -148,6 +148,23 @@ export class FolderSyncSettingTab extends PluginSettingTab {
 
         this.plugin.settings.syncPairs.forEach((pair, index) => {
             items.push(this.buildSyncPairGroup(pair, index));
+        });
+
+        items.push({
+            type: 'group',
+            cls: 'folder-sync-settings',
+            heading: 'Support Local Folder Sync ❤️',
+            items: [
+                this.row(
+                    'If you like "Local Folder Sync", please consider buying me a coffee!', undefined, setting => {
+                        setting.addButton(cb => cb
+                            .setButtonText('Buy me a coffee ☕')
+                            .setCta()
+                            .onClick(() => window.open('https://buymeacoffee.com/iambot'))
+                        );
+                    }
+                ),
+            ],
         });
 
         return items;
@@ -235,7 +252,7 @@ export class FolderSyncSettingTab extends PluginSettingTab {
                 }),
 
                 // Remove button
-                this.row('Remove', undefined, setting => {
+                this.row('By pressing Remove, you will remove this sync folder.', undefined, setting => {
                     setting.addButton(cb => cb
                         .setButtonText('Remove')
                         .onClick(() => this.removeSyncPair(index))
