@@ -225,6 +225,11 @@ interface DestFileEntry {
 
 /**
  * Recursively list all files under a destination folder on disk.
+ *
+ * Skips dotfiles/dot-folders (e.g. `.git`, `.DS_Store`): Obsidian's vault API
+ * hides these from the source-side file listing, so treating them as
+ * destination-only would make one-way mode delete them and newer-wins mode
+ * repeatedly fail trying to copy them into the vault.
  */
 function listDestinationFiles(destPath: string): DestFileEntry[] {
     const results: DestFileEntry[] = [];
@@ -233,6 +238,10 @@ function listDestinationFiles(destPath: string): DestFileEntry[] {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
 
         for (const entry of entries) {
+            if (entry.name.startsWith('.')) {
+                continue;
+            }
+
             const fullPath = path.join(dir, entry.name);
 
             if (entry.isDirectory()) {

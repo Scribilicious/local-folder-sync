@@ -203,11 +203,12 @@ export default class FolderSyncPlugin extends Plugin {
             const results = await syncAllPairs(this.app.vault, enabledPairs);
 
             // Aggregate results
-            for (const [, result] of results) {
+            for (const [key, result] of results) {
                 totalCopied += result.copied;
                 totalDeleted += result.deleted;
                 if (result.errors.length > 0) {
                     allErrors.push(...result.errors);
+                    console.error(`Folder sync: errors syncing "${key}"`, result.errors);
                 }
             }
 
@@ -223,7 +224,8 @@ export default class FolderSyncPlugin extends Plugin {
             }
             this.setStatus(summary, 5000);
 
-        } catch {
+        } catch (error: unknown) {
+            console.error('Folder sync: sync failed', error);
             new Notice('Folder sync: sync failed');
             this.setStatus('Folder sync: failed', 5000);
         } finally {
