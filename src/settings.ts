@@ -216,7 +216,7 @@ export class FolderSyncSettingTab extends PluginSettingTab {
                 this.row('Destination', 'Local drive folder path (absolute path)', setting => {
                     setting.addText(text => {
                         text.setValue(pair.destination);
-                        text.inputEl.placeholder = 'e.g., /Users/Jens/Documents/Backup';
+                        text.inputEl.placeholder = 'E.g., /users/jens/documents/backup';
                         text.onChange(async (value) => {
                             this.plugin.settings.syncPairs[index]!.destination = value;
                             await this.plugin.saveSettings();

@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { TAbstractFile, TFile, TFolder, Vault, normalizePath } from 'obsidian';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -235,7 +236,7 @@ function listDestinationFiles(destPath: string): DestFileEntry[] {
     const results: DestFileEntry[] = [];
 
     const walk = (dir: string): void => {
-        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        const entries: fs.Dirent[] = fs.readdirSync(dir, { withFileTypes: true });
 
         for (const entry of entries) {
             if (entry.name.startsWith('.')) {
@@ -248,7 +249,7 @@ function listDestinationFiles(destPath: string): DestFileEntry[] {
                 walk(fullPath);
             } else if (entry.isFile()) {
                 const relativePath = toPosixPath(fullPath.slice(destPath.length + 1));
-                const stat = fs.statSync(fullPath);
+                const stat: fs.Stats = fs.statSync(fullPath);
                 results.push({ relativePath, fullPath, mtimeMs: stat.mtimeMs });
             }
         }

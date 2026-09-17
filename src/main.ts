@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { Plugin, Notice, TAbstractFile, EventRef, normalizePath } from 'obsidian';
 import * as fs from 'fs';
 import { FolderSyncSettingTab } from './settings';
@@ -115,7 +116,7 @@ export default class FolderSyncPlugin extends Plugin {
         for (const destPath of destinations) {
             if (!destPath || !fs.existsSync(destPath)) continue;
             try {
-                const watcher = fs.watch(destPath, { recursive: true }, (): void => {
+                const watcher: fs.FSWatcher = fs.watch(destPath, { recursive: true }, (): void => {
                     if (this.isSyncing) return;
                     this.scheduleDebouncedSync();
                 });
