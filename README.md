@@ -122,6 +122,10 @@ npm run build
 - Paths are normalized for cross-platform compatibility
 - The plugin prevents concurrent syncs to avoid conflicts
 
+## Disclosures
+
+This plugin includes a link to [Buy Me a Coffee](https://buymeacoffee.com/iambot) for optional user support. Clicking the "Buy me a coffee" button in the plugin settings will open this external website.
+
 ## License
 
 MIT
