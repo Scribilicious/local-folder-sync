@@ -291,7 +291,7 @@ interface EmbedSyncResult {
     destRelativePaths: Set<string>;
 }
 
-const WIKI_EMBED_PATTERN = /!\[\[([^\[\]]+?)\]\]/g;
+const WIKI_EMBED_PATTERN = /!\[\[([^\][]+?)\]\]/g;
 const MARKDOWN_EMBED_PATTERN = /!\[([^\]]*)\]\(([^)]+?)\)/g;
 
 /**
