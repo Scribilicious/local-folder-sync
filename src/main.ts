@@ -45,12 +45,19 @@ export default class FolderSyncPlugin extends Plugin {
     }
 
     async loadSettings(): Promise<void> {
-        const data = await this.loadData() as Partial<FolderSyncSettings> | null;
+        const data = await this.loadData() as
+            (Partial<FolderSyncSettings> & {
+                syncPairs?: Array<Partial<SyncPair> & { syncAttachments?: boolean }>;
+            }) | null;
         this.settings = Object.assign({}, DEFAULT_SETTINGS, data ?? {});
-        // Fill in defaults for sync pairs saved before `mode` existed
-        this.settings.syncPairs = this.settings.syncPairs.map(pair => ({
-            ...pair,
+        const savedPairs = (data?.syncPairs ?? []) as Array<Partial<SyncPair> & { syncAttachments?: boolean }>;
+        // Fill in defaults for sync pairs saved before newer fields existed
+        this.settings.syncPairs = savedPairs.map(pair => ({
+            source: pair.source ?? '',
+            destination: pair.destination ?? '',
+            enabled: pair.enabled ?? false,
             mode: pair.mode ?? 'one-way',
+            embedSyncMode: pair.embedSyncMode ?? (pair.syncAttachments === true ? 'always' : 'auto'),
         }));
     }
 
@@ -201,7 +208,7 @@ export default class FolderSyncPlugin extends Plugin {
             }
 
             // Sync each pair
-            const results = await syncAllPairs(this.app.vault, enabledPairs);
+            const results = await syncAllPairs(this.app.vault, this.app.metadataCache, enabledPairs);
 
             // Aggregate results
             for (const [key, result] of results) {
@@ -245,7 +252,7 @@ export default class FolderSyncPlugin extends Plugin {
 
         this.isSyncing = true;
         try {
-            const result = await syncAllPairs(this.app.vault, [pair]);
+            const result = await syncAllPairs(this.app.vault, this.app.metadataCache, [pair]);
             const firstResult = result.values().next().value;
             if (firstResult) {
                 let message = `${firstResult.copied} copied, ${firstResult.deleted} deleted`;

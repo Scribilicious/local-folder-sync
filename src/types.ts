@@ -1,5 +1,14 @@
 export type SyncMode = 'one-way' | 'newer';
 export type SyncTrigger = 'interval' | 'on-change';
+/**
+ * How to sync files embedded in markdown notes (e.g. `![[image.png]]`):
+ * - 'auto': copy them next to their note only when Obsidian stores new
+ *   attachments somewhere other than the note's own folder
+ *   (Files & links → Default location for new attachments).
+ * - 'always': always copy them next to their note, regardless of that setting.
+ * - 'never': never follow embedded files; sync only what lives in the source folder.
+ */
+export type EmbedSyncMode = 'auto' | 'always' | 'never';
 
 export interface SyncPair {
     source: string;
@@ -11,6 +20,7 @@ export interface SyncPair {
      * files unique to one side are copied to the other; nothing is ever deleted.
      */
     mode: SyncMode;
+    embedSyncMode: EmbedSyncMode;
 }
 
 export interface FolderSyncSettings {
@@ -26,6 +36,7 @@ export const DEFAULT_SYNC_PAIR: SyncPair = {
     destination: '',
     enabled: false,
     mode: 'newer',
+    embedSyncMode: 'auto',
 };
 
 export const DEFAULT_SETTINGS: FolderSyncSettings = {

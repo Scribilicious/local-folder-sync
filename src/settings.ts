@@ -7,7 +7,7 @@ import {
     normalizePath,
 } from 'obsidian';
 import type FolderSyncPlugin from './main';
-import { SyncMode, SyncPair, SyncTrigger } from './types';
+import { EmbedSyncMode, SyncMode, SyncPair, SyncTrigger } from './types';
 
 export class FolderSyncSettingTab extends PluginSettingTab {
     plugin: FolderSyncPlugin;
@@ -132,10 +132,19 @@ export class FolderSyncSettingTab extends PluginSettingTab {
             heading: 'Sync folders',
             items: [
                 this.row(
-                    'Add sync folder',
-                    'Add folder pairs to sync. One-way: only source changes reach the destination, and extra ' +
-                    'destination files are deleted. Newer file wins: whichever side changed most recently is ' +
-                    'copied to the other side; nothing is ever deleted automatically.',
+                    'Add a sync folder',
+                    this.multilineDesc(
+                        'Add folder pairs to sync. Each folder pair has the following options:\n' +
+                        'One-way: only source changes reach the destination, and extra ' +
+                        'destination files are deleted.\n' +
+                        'Newer file wins: whichever side changed most recently is ' +
+                        'copied to the other side; nothing is ever deleted automatically.\n\n' +
+                        'Each pair also has an "Embedded files" option:\n' +
+                        'Auto: Copy only when attachments live outside the synced folder (default).\n' +
+                        'Always: Always scans all notes in the folder and syncs their attachments.\n' +
+                        'Never: Don\'t copy embedded files; use this for a plain mirror of the folder, ' +
+                        'or when the attachments are synced by a separate pair.'
+                    ),
                     setting => {
                         setting.addButton(cb => cb
                             .setButtonText('Add sync folder')
@@ -172,10 +181,33 @@ export class FolderSyncSettingTab extends PluginSettingTab {
 
     private row(
         name: string,
-        desc: string | undefined,
+        desc: string | DocumentFragment | undefined,
         render: SettingDefinitionRender['render']
     ): SettingDefinitionRender {
         return { name, desc, render };
+    }
+
+    /**
+     * Build a multi-line description. A plain string with "\n" won't show
+     * line breaks — Obsidian collapses the newlines to spaces when rendering
+     * a string description — so render the text as a DocumentFragment with
+     * explicit line breaks instead. A blank line becomes a paragraph gap.
+     */
+    private multilineDesc(text: string): DocumentFragment {
+        return createFragment(fragment => {
+            const lines = text.split('\n');
+            lines.forEach((line, index) => {
+                if (index > 0) {
+                    fragment.appendChild(createEl('br'));
+                    if (line === '') {
+                        fragment.appendChild(createEl('br'));
+                    }
+                }
+                if (line !== '') {
+                    fragment.appendText(line);
+                }
+            });
+        });
     }
 
     private buildSyncPairGroup(pair: SyncPair, index: number): SettingDefinitionGroup {
@@ -239,6 +271,25 @@ export class FolderSyncSettingTab extends PluginSettingTab {
                     });
                 }),
 
+                // Embedded files handling
+                this.row(
+                    'Embedded files',
+                    'Handles note attachments. See "Add sync folder" above for details.',
+                    setting => {
+                        setting.addDropdown(dropdown => {
+                            dropdown
+                                .addOption('auto', 'Auto')
+                                .addOption('always', 'Always')
+                                .addOption('never', 'Never')
+                                .setValue(pair.embedSyncMode)
+                                .onChange(async (value) => {
+                                    this.plugin.settings.syncPairs[index]!.embedSyncMode = value as EmbedSyncMode;
+                                    await this.plugin.saveSettings();
+                                });
+                        });
+                    }
+                ),
+
                 // Enabled toggle
                 this.row('Enabled', 'Enable/disable this sync folder', setting => {
                     setting.addToggle(toggle => {
@@ -274,6 +325,7 @@ export class FolderSyncSettingTab extends PluginSettingTab {
             destination: '',
             enabled: false,
             mode: 'one-way',
+            embedSyncMode: 'auto',
         });
         void this.plugin.saveSettings();
         this.refreshAutoSyncIfNeeded();

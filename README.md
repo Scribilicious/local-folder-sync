@@ -11,6 +11,8 @@ A plugin that syncs vault folders to external directories, one-way or two-way pe
     changed most recently is copied to the other side. Files unique to one side
     are copied to the other. Nothing is ever deleted automatically.
 - **Multiple folder pairs**: Add and manage multiple source-destination pairs, each with its own mode
+- **Embedded files following**: Files a note embeds (`![[image.png]]`, `![](media/img.png)`) are
+  copied next to the note in the destination, even when they live in a central attachments folder
 - **Auto-sync**: Automatically sync on an interval, or on-change (as soon as a file changes)
 - **Manual sync**: Trigger sync via the command palette, the settings button, or the status bar indicator
 - **Sync status**: A status bar item shows when a sync is running and its result
@@ -63,6 +65,9 @@ Open the plugin settings to:
    - **Destination**: Absolute local path (e.g., `/Users/Jens/Documents/Backup`)
    - **Sync Mode**: `One-way` (source → destination, deletes extra destination files) or
      `Newer file wins` (two-way, never deletes)
+   - **Embedded Files**: Whether files embedded in the synced notes (e.g. `![[image.png]]`)
+     are copied into the note's folder in the destination. Options: `Auto` (default),
+     `Always`, `Never` — see [Embedded files following](#embedded-files-following) below.
    - **Enabled**: Toggle individual pairs on/off
 
 ### Manual Sync
@@ -83,6 +88,44 @@ Open the plugin settings to:
 - **Subfolder support**: Nested folder structures are preserved on both sides
 - **Overlap protection**: If two enabled pairs' destinations are the same or nested, the later one is
   skipped (with an error) rather than risking one pair deleting the other's files
+
+### Embedded files following
+
+Notes often embed files that live outside the synced folder. When Obsidian stores new
+attachments in a central folder (e.g. `media/`), a note only contains `![[Screenshot.png]]` —
+that file would never reach the destination alongside the note. When the embed pass runs,
+the plugin scans every generated note in the pair's source folder for embeds, resolves each
+one the same way Obsidian does (`MetadataCache.getFirstLinkpathDest`), and copies the resolved
+file into the note's folder in the destination.
+
+Each pair controls this with the **Embedded files** option:
+
+- **Auto** (default): Reads Obsidian's *Files & links → Default location for new attachments*
+  setting. If it is "Same folder as current file" (`'./'`), the scan is skipped entirely —
+  attachments already live next to their notes, so the regular sync copies them anyway.
+  Any other value (a central folder, the vault root, a subfolder of the current folder)
+  enables the scan. If the setting cannot be read, the feature degrades to "off".
+- **Always**: Runs the scan regardless of that Obsidian setting — useful for older
+  attachments that still sit in a central folder after switching to same-folder mode.
+- **Never**: No scan; the destination stays a plain mirror of the source folder. Use this
+  when the attachments folder is synced by its own pair.
+
+Behavior details:
+
+- Files already inside the pair's source folder are never handled by the embed pass —
+  the regular sync copies those.
+- Embeds of other notes are skipped; links between notes never create copies.
+- URLs and unresolvable links are skipped silently; two different embedded files with the
+  same filename landing in the same destination folder are reported as sync errors.
+- **One-way mode**: embed copies are kept alive during destination cleanup and removed
+  again once no note references them anymore.
+- **Newer file wins mode**: copying is one-directional (vault → destination); embed copies
+  are never synced back into the vault, so no duplicates appear next to the originals.
+- Notes are not rewritten — the destination keeps the original `![[image.png]]` links,
+  which resolve when the synced folder is opened as a vault in Obsidian.
+- An attachment that is changed while the embedding note is untouched does not trigger an
+  `On Change` auto-sync when it lives outside the synced folder; the updated copy goes out
+  with the next sync.
 
 ### Error Handling
 

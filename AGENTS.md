@@ -32,6 +32,13 @@ local-folder-sync/
   destination files are deleted. `newer`: two-way, whichever side changed most
   recently wins; files unique to one side are copied to the other; nothing is
   ever deleted automatically.
+- `embedSyncMode`: `'auto' | 'always' | 'never'` - Controls "embedded files following":
+  copying files that synced notes embed (`![[image.png]]`, `![](media/img.png)`) into the
+  note's folder in the destination when they live outside the pair's source folder
+  (e.g. in a central attachments folder). `auto` (default) enables this only when
+  Obsidian's `attachmentFolderPath` vault config is anything other than `'./'`
+  (same folder as current file); implemented via `shouldSyncEmbeds()` in sync.ts
+  (`vault.getConfig('attachmentFolderPath')`, not in official typings, runtime-guarded).
 
 ### FolderSyncSettings (src/types.ts)
 - `syncPairs`: SyncPair[] - All configured sync pairs
